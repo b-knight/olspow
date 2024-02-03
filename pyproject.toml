@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "olspow"
+version = "0.1.1"
+authors = [
+  { name="Benjamin S. Knight",
+    email="knight.benjamin@gmail.com" },
+]
+description = "Python package for conducting power analysis using regression + clustered data."
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+  "appengine-python-standard",
+  "humanize",
+  "numpy",
+  "pandas",
+  "scipy",
+  "statsmodels",
+]
+
+[project.urls]
+Homepage = "https://github.com/b-knight/olspow"
+Issues = "https://github.com/b-knight/olspow/issues"

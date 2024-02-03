@@ -1,0 +1,10 @@
+LICENSE
+README.md
+pyproject.toml
+src/__init__.py
+src/olspow.py
+src/olspow.egg-info/PKG-INFO
+src/olspow.egg-info/SOURCES.txt
+src/olspow.egg-info/dependency_links.txt
+src/olspow.egg-info/requires.txt
+src/olspow.egg-info/top_level.txt

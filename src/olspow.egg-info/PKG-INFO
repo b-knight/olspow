@@ -1,0 +1,20 @@
+Metadata-Version: 2.1
+Name: olspow
+Version: 0.1.1
+Summary: A small example package
+Author-email: "Benjamin S. Knight" <knight.benjamin@gmail.com>
+Project-URL: Homepage, https://github.com/b-knight/olspow
+Project-URL: Issues, https://github.com/b-knight/olspow/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: appengine-python-standard
+Requires-Dist: humanize
+Requires-Dist: math
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: scipy
+Requires-Dist: statsmodels

@@ -1,0 +1,7 @@
+appengine-python-standard
+humanize
+math
+numpy
+pandas
+scipy
+statsmodels

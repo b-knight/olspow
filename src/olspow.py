@@ -170,7 +170,7 @@ def solve_power(
         if len(data) / (num_coef) < NOBS_PER_COVARIATE:
             print(
                 f"NOTE: Model specification implies {num_coef} covariates "
-                + f"({num_coef} coefficient estimates). \nHowever, only "
+                + f"({num_coef} coefficient estimate(s)). \nHowever, only "
                 + f"{humanize.intcomma(len(data))} unique units of assignment "
                 + "were found. \nConsider increasing the size of the "
                 + "historical dataset to at least "
@@ -205,6 +205,10 @@ def solve_power(
         X = sm.add_constant(X)
         model = sm.OLS(Y, X)
         model_fit = model.fit()
+        if verbose:
+            print("\nThe response variable was regressed on the exogenous variables.")
+            print("-" * 78)
+            print(model_fit.summary())
         return model_fit.resid
 
     def _compute_residuals_of_nobs_per_cluster(data, exog):
@@ -222,13 +226,19 @@ def solve_power(
         """
         if verbose:
             print(
-                "Computing the residuals corresponding to the "
+                "\nComputing the residuals corresponding to the "
                 + "number of observation per cluster."
             )
         X, Y = data[exog], data["NOBS_IN_CLUSTER"]
         X = sm.add_constant(X)
         model = sm.OLS(Y, X)
         model_fit = model.fit()
+        if verbose:
+            print(
+                "The number of observations per cluster was regressed on the exogenous variables."
+            )
+            print("-" * 78)
+            print(model_fit.summary())
         return model_fit.resid
 
     def _compute_ratio_of_means(working_df, endog):
