@@ -4,10 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "olspow"
-version = "0.1.1"
+version = "0.1.2"
 authors = [
-  { name="Benjamin S. Knight",
-    email="knight.benjamin@gmail.com" },
+  { name="Benjamin S. Knight", email="knight.benjamin@gmail.com" },
 ]
 description = "Python package for conducting power analysis using regression + clustered data."
 readme = "README.md"
