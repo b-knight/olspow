@@ -21,16 +21,19 @@ and as such, cannot account for the degree to which covariate adjustment improve
 designed to address this problem.
 
 
-## Using olspow
+## Calling the solve_power() Method
 All functionality is accessed via the **solve_power()** method, which returns the minimum detectable effect (MDE), power, or required sample size
 (as measured in number of units of experimental assignment).<br>
 
 **solve_power**(data, endog, exog, cluster, ratio, alpha, mde, power, n, alternative, verbose):
-
+> **_is_ratio (boolean, required)_** : A boolean representing whether the metric represents a ratio of two variables. Setting this value to 'True' makes the 'numerator' and 'denominator' arguments mandatory while rendering the 'endog' argument
+superfluous. Contrariwise, a value of 'False' will obviate the need for the 'numerator' and 'denominator' arguments while making the 'endog' argument mandatory.<br>
 > **_data (pandas.core.frame.DataFrame, required)_** : A Pandas dataframe containing (at a minimum) historical values for the response variable and the cluster key.
 >  Ideally, the dataframe contains 100 unique units of experimental assignment per covariate.<br>
-> **_endog (string, required)_** : A string representing the response variable being modeled - i.e. the metric of interest.<br>
+> **_endog (string, optional)_** : A string representing the response variable being modeled - i.e. the metric of interest.<br>
 > **_exog (list of strings, required)_** : A list of strings representing the names of covariates that are being adjusted for (i.e. column names within the Pandas dataframe).<br>
+> **_numerator (str, optional)_**: The name of the numerator variable (e.g. if the metric is items fulfilled per unit of time, then this value would be the number of items fulfilled). Required when 'is_ratio' = True. Defaults to None.
+> **_denominator (str, optional)_**: The name of the denominator variable (e.g. if the metric is items fulfilled per unit of time, then this value would be the amount of time). Required when 'is_ratio' = True. Defaults to None.
 > **_cluster (string, required)_** : The name of the column in the Pandas dataframe that serves as the cluster key (unit of experimental assignment)<br>
 > **_ratio (float, optional)_** : Assumed ratio of treated units of assignment to control units of assignment. Defaults to 0.5 (i.e. 50:50 assignment between treated and control)<br>
 > **_alpha (float, optional)_** : A float corresponding to the false positive rate. The default value is 0.05<br>

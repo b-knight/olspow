@@ -120,6 +120,16 @@ def solve_power(
                 "The 'exog' argument must be a list of strings corresponding "
                 + "to the names of the predictor variables."
             )
+        if len(exog) == 0:
+            print(
+                "No covariates were specified. Power analysis will be "
+                + "performed using only the intercept term."
+            )
+            print(
+                "NOTE: With no covariates, estimation will be akin to a "
+                + "t-test using pooled variance (i.e. a two-sample t-test). "
+                + "Are you sure this is the desired model specification?"
+            )
         for predictor in exog:
             if not isinstance(predictor, str):
                 raise ValueError(
@@ -131,7 +141,7 @@ def solve_power(
                     f"The predictor variable '{predictor}' was not found "
                     + "within the provided Pandas dataframe."
                 )
-            if (
+            if is_ratio and (
                 predictor.lower() == numerator.lower()
                 or predictor.lower() == denominator.lower()
             ):
@@ -210,7 +220,7 @@ def solve_power(
                 + "be performed."
             )
 
-    def _create_data_shape(
+    def _aggregate_data(
         data, endog, exog, cluster, numerator, denominator, agg_method=None
     ):
         """
@@ -252,9 +262,9 @@ def solve_power(
             print(f"{len(data_agg_out)} clusters were found in the data.")
         return data_agg_out
 
-    def _validate_post_agg_data_shape(data, exog):
+    def _validate_sample_size(data, exog):
         """
-        Validates the shape of the post-aggregation data.
+        Validates the sample size post aggregation.
 
         Args:
             data (pandas.DataFrame): The post-aggregation data.
@@ -390,7 +400,7 @@ def solve_power(
         )
         return np.sqrt(((resid_data["double_residual"] ** 2).sum()) / dof)
 
-    def _fetch_z_statistic(input, alternative):
+    def _fetch_z_statistic(input, alternative="one-sided"):
         """
         Fetches the z-statistic based on the input and alternative.
 
@@ -438,7 +448,7 @@ def solve_power(
         if verbose:
             print("Deriving the minimum detectable effect.")
         alpha_z, alpha = _fetch_z_statistic(alpha_value, num_sides)
-        beta_z, beta = _fetch_z_statistic(1.0 - power_value, num_sides)
+        beta_z, beta = _fetch_z_statistic(1.0 - power_value)
         mde = (
             (alpha_z + beta_z)
             * np.sqrt((1 / assignment_ratio) + 1 / (1 - assignment_ratio))
@@ -600,8 +610,8 @@ def solve_power(
             + f"historic dataset of {humanize.intcomma(len(data))} "
             + "observations."
         )
-    working_df = _create_data_shape(data, endog, exog, cluster, numerator, denominator)
-    _validate_post_agg_data_shape(working_df, exog)
+    working_df = _aggregate_data(data, endog, exog, cluster, numerator, denominator)
+    _validate_sample_size(working_df, exog)
     stdev = _computer_standard_deviation(is_ratio, working_df, endog, exog)
     mean_nobs_per_cluster = working_df["NOBS_IN_CLUSTER"].mean()
     if mde is None and n is not None and power is not None:
