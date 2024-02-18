@@ -6,7 +6,7 @@ import scipy.stats as st
 import statsmodels.api as sm
 
 ABS_MIN_NOBS = 1000  # Absolute minimum number of total observations
-NOBS_PER_COVARIATE = 100  # Recommended number of incremental observations per covariate
+NOBS_PER_COVARIATE = 200  # Recommended number of incremental nobs per covariate
 
 
 def solve_power(
@@ -128,7 +128,7 @@ def solve_power(
             print(
                 "NOTE: With no covariates, estimation will be akin to a "
                 + "t-test using pooled variance (i.e. a two-sample t-test). "
-                + "Are you sure this is the desired model specification?"
+                + "\nAre you sure this is the desired model specification?"
             )
         for predictor in exog:
             if not isinstance(predictor, str):
@@ -323,7 +323,7 @@ def solve_power(
             print(model_fit.summary())
         return model_fit.resid
 
-    def _compute_residuals_of_nobs_per_cluster(is_ratio, data, exog):
+    def _compute_residuals_of_denominator(is_ratio, data, exog):
         """
         Compute the residuals corresponding to the number of observations per cluster.
 
@@ -374,7 +374,7 @@ def solve_power(
         else:
             return working_df[endog].mean() / working_df["NOBS_IN_CLUSTER"].mean()
 
-    def _computer_standard_deviation(is_ratio, working_df, endog, exog):
+    def _compute_standard_deviation(is_ratio, working_df, endog, exog):
         """
         Compute the standard deviation of the double residuals.
 
@@ -389,7 +389,7 @@ def solve_power(
         """
         dof = len(working_df) - (len(exog) + 1)
         j_resid = _compute_residuals_of_response_var(is_ratio, working_df, endog, exog)
-        n_resid = _compute_residuals_of_nobs_per_cluster(is_ratio, working_df, exog)
+        n_resid = _compute_residuals_of_denominator(is_ratio, working_df, exog)
         resid_data = pd.DataFrame([j_resid, n_resid]).T
         resid_data.columns = ["j_resid", "n_resid"]
         resid_data["ratio_of_means"] = _compute_ratio_of_means(
@@ -469,9 +469,7 @@ def solve_power(
             + f"across {humanize.intcomma(len(working_df))} clusters of historical data. "
             + f"\nThe model specification used {humanize.intcomma(len(covariates))} "
             + f"covariates, assumes {humanize.intcomma(len(covariates)+1)} coefficient "
-            + f"estimates, and {humanize.intcomma(len(working_df) - len(covariates)+1)} "
-            + f"degrees of freedom (alpha={round(alpha, 4)}, "
-            + f"beta={round(beta, 4)})."
+            + f"estimates (alpha={round(alpha, 4)}, beta={round(beta, 4)})."
         )
         return mde
 
@@ -532,9 +530,7 @@ def solve_power(
             + f"across {humanize.intcomma(len(working_df))} clusters of historical data. "
             + f"\nThe model specification used {humanize.intcomma(len(covariates))} "
             + f"covariates, assumes {humanize.intcomma(len(covariates)+1)} coefficient "
-            + f"estimates, and {humanize.intcomma(len(working_df) - len(covariates)+1)} "
-            + f"degrees of freedom (alpha={round(alpha, 4)}, "
-            + f"beta={round(beta, 4)})."
+            + f"estimate(s) (alpha={round(alpha, 4)}, beta={round(beta, 4)})."
         )
         return sample_size
 
@@ -597,8 +593,7 @@ def solve_power(
             + f"across {humanize.intcomma(len(working_df))} clusters of historical data. "
             + f"\nThe model specification used {humanize.intcomma(len(covariates))} "
             + f"covariates, assumes {humanize.intcomma(len(covariates)+1)} coefficient "
-            + f"estimates, and {humanize.intcomma(len(working_df) - len(covariates)+1)} "
-            + f"degrees of freedom (alpha={round(alpha, 4)})."
+            + f"estimates (alpha={round(alpha, 4)})."
         )
         return est_power
 
@@ -612,7 +607,7 @@ def solve_power(
         )
     working_df = _aggregate_data(data, endog, exog, cluster, numerator, denominator)
     _validate_sample_size(working_df, exog)
-    stdev = _computer_standard_deviation(is_ratio, working_df, endog, exog)
+    stdev = _compute_standard_deviation(is_ratio, working_df, endog, exog)
     mean_nobs_per_cluster = working_df["NOBS_IN_CLUSTER"].mean()
     if mde is None and n is not None and power is not None:
         mde = _derive_mde(

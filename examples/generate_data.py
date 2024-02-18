@@ -3,42 +3,90 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
-np.random.seed(7)  # Set a seed for reproducibility
 
-
-def gen_data(
-    n_c=5,  # number of clusters
-    mu_nobs_per_c=1,  # mean number of nobs per cluster
-    std_nobs_per_c=1,  # stddev of nobs per cluster
-    psi=0.5,  # proportion of clusters treated
-    epsilon_mu=0,  # the mean amount of noise to be added to an observation
-    epsilons_std=5,  # the stddev of the noise to be added to an observation
-    # -------------------------------------------------------------------------------------------------
-    mu_of_mu_c_treated=5,  # the mean of the cluster means for the treatment effect
-    std_of_mu_c_treated=1,  # stddev of cluster means for treatment effect
-    mu_of_c_std_treated=1,  # the mean of the cluster's stddev for the treatment effect
-    std_of_c_std_treated=1,  # the stddev of the cluster's stddev for the treatment effect
-    # -------------------------------------------------------------------------------------------------
-    mu_of_mu_c_cov_1=120,  # the mean of the cluster means for covariate 1
-    std_of_mu_c_cov_1=20,  # stddev of cluster means for covariate 1
-    mu_of_c_std_cov_1=10,  # the mean of the cluster's stddev for covariate 1
-    std_of_c_std_cov_1=5,  # the stddev of the cluster's stddev for covariate 1
-    # -------------------------------------------------------------------------------------------------
-    mu_of_mu_c_cov_1_eff=0.5,  # the mean of the cluster means for the coef est. of covariate 1
-    std_of_mu_c_cov_1_eff=0.06,  # stddev of cluster means for the coef est. of covariate 1
-    mu_of_c_std_cov_1_eff=0.01,  # the mean of the cluster's stddev for the coef est. of covariate 1
-    std_of_c_std_cov_1_eff=0.01,  # the stddev of the cluster's stddev for the coef est. of covariate 1
-    # -------------------------------------------------------------------------------------------------
-    mu_of_mu_c_cov_2=20,  # the mean of the cluster means for covariate 2
-    std_of_mu_c_cov_2=5,  # stddev of cluster means for covariate 2
-    mu_of_c_std_cov_2=2,  # the mean of the cluster's stddev for covariate 2
-    std_of_c_std_cov_2=1,  # the stddev of the cluster's stddev for covariate 2
-    # -------------------------------------------------------------------------------------------------
-    mu_of_mu_c_cov_2_eff=1.5,  # the mean of the cluster means for the coef est. of covariate 2
-    std_of_mu_c_cov_2_eff=0.5,  # stddev of cluster means for the coef est. of covariate 2
-    mu_of_c_std_cov_2_eff=0.25,  # the mean of the cluster's stddev for the coef est. of covariate 2
-    std_of_c_std_cov_2_eff=0.1,  # the stddev of the cluster's stddev for the coef
+def gen_clustered_data(
+    n_c=5,
+    mu_nobs_per_c=1,
+    std_nobs_per_c=2,
+    psi=0.5,
+    epsilon_mu=0,
+    epsilons_std=5,
+    mu_of_mu_c_treated=5,
+    std_of_mu_c_treated=1,
+    mu_of_c_std_treated=1,
+    std_of_c_std_treated=1,
+    mu_of_mu_c_cov_1=120,
+    std_of_mu_c_cov_1=20,
+    mu_of_c_std_cov_1=10,
+    std_of_c_std_cov_1=5,
+    mu_of_mu_c_cov_1_eff=5,
+    std_of_mu_c_cov_1_eff=0.5,
+    mu_of_c_std_cov_1_eff=0.01,
+    std_of_c_std_cov_1_eff=0.01,
+    mu_of_mu_c_cov_2=20,
+    std_of_mu_c_cov_2=5,
+    mu_of_c_std_cov_2=2,
+    std_of_c_std_cov_2=1,
+    mu_of_mu_c_cov_2_eff=1.5,
+    std_of_mu_c_cov_2_eff=0.5,
+    mu_of_c_std_cov_2_eff=0.25,
+    std_of_c_std_cov_2_eff=0.1,
+    randomization_seed=1,
 ):
+    """
+    Generate non-ratio data for observational studies.
+
+    Args:
+        n_c (int): Number of clusters.
+        mu_nobs_per_c (float): Mean number of observations per cluster.
+        std_nobs_per_c (float): Standard deviation of observations per cluster.
+        psi (float): Proportion of clusters treated.
+        epsilon_mu (float): Mean amount of noise to be added to an observation.
+        epsilons_std (float): Standard deviation of the noise to be added to
+            an observation.
+        mu_of_mu_c_treated (float): Mean of the cluster means for the
+            treatment effect.
+        std_of_mu_c_treated (float): Standard deviation of cluster means for
+            treatment effect.
+        mu_of_c_std_treated (float): Mean of the cluster's standard deviation
+            for the treatment effect.
+        std_of_c_std_treated (float): Standard deviation of the cluster's
+            standard deviation for the treatment effect.
+        mu_of_mu_c_cov_1 (float): Mean of the cluster means for covariate 1.
+        std_of_mu_c_cov_1 (float): Standard deviation of cluster means for
+            covariate 1.
+        mu_of_c_std_cov_1 (float): Mean of the cluster's standard deviation
+            for covariate 1.
+        std_of_c_std_cov_1 (float): Standard deviation of the cluster's
+            standard deviation for covariate 1.
+        mu_of_mu_c_cov_1_eff (float): Mean of the cluster means for the
+            coefficient estimate of covariate 1.
+        std_of_mu_c_cov_1_eff (float): Standard deviation of cluster means for
+            the coefficient estimate of covariate 1.
+        mu_of_c_std_cov_1_eff (float): Mean of the cluster's standard
+            deviationfor the coefficient estimate of covariate 1.
+        std_of_c_std_cov_1_eff (float): Standard deviation of the cluster's
+            standard deviation for the coefficient estimate of covariate 1.
+        mu_of_mu_c_cov_2 (float): Mean of the cluster means for covariate 2.
+        std_of_mu_c_cov_2 (float): Standard deviation of cluster means for
+            covariate 2.
+        mu_of_c_std_cov_2 (float): Mean of the cluster's standard deviation
+            for covariate 2.
+        std_of_c_std_cov_2 (float): Standard deviation of the cluster's
+            standard deviation for covariate 2.
+        mu_of_mu_c_cov_2_eff (float): Mean of the cluster means for the
+            coefficient estimate of covariate 2.
+        std_of_mu_c_cov_2_eff (float): Standard deviation of cluster means for
+            the coefficient estimate of covariate 2.
+        mu_of_c_std_cov_2_eff (float): Mean of the cluster's standard
+            deviation for the coefficient estimate of covariate 2.
+        std_of_c_std_cov_2_eff (float): Standard deviation of the cluster's
+            standard deviation for the coefficient estimate of covariate 2.
+        randomization_seed (int): Seed for random number generation.
+    Returns:
+        pd.DataFrame: Generated non-ratio data for observational studies.
+    """
+    np.random.seed(randomization_seed)
     nob_ids, cluster_ids, received_treatment, nobs_in_cluster = [], [], [], []
     treatment_values, covariate_1_values, covariate_1_coefs = [], [], []
     covariate_2_values, covariate_2_coefs, epsilon_values = [], [], []

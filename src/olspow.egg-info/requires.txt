@@ -1,4 +1,3 @@
-appengine-python-standard
 humanize
 numpy
 pandas
