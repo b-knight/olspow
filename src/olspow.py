@@ -121,15 +121,16 @@ def solve_power(
                 + "to the names of the predictor variables."
             )
         if len(exog) == 0:
-            print(
-                "No covariates were specified. Power analysis will be "
-                + "performed using only the intercept term."
-            )
-            print(
-                "NOTE: With no covariates, estimation will be akin to a "
-                + "t-test using pooled variance (i.e. a two-sample t-test). "
-                + "\nAre you sure this is the desired model specification?"
-            )
+            if verbose:
+                print(
+                    "No covariates were specified. Power analysis will be "
+                    + "performed using only the intercept term."
+                )
+                print(
+                    "NOTE: With no covariates, estimation will be akin to a "
+                    + "t-test using pooled variance (i.e. a two-sample t-test). "
+                    + "\nAre you sure this is the desired model specification?"
+                )
         for predictor in exog:
             if not isinstance(predictor, str):
                 raise ValueError(
@@ -460,17 +461,18 @@ def solve_power(
             variable_type = "ratio metric"
         else:
             variable_type = "non-ratio metric"
-        print(
-            f"Power analysis where the response variable is a {variable_type} is as follows:"
-        )
-        print(
-            f"The minimum detectable effect (MDE) was estimated as {humanize.intcomma(mde)}. "
-            + f"\nEstimate was based on {humanize.intcomma(len(data))} observations "
-            + f"across {humanize.intcomma(len(working_df))} clusters of historical data. "
-            + f"\nThe model specification used {humanize.intcomma(len(covariates))} "
-            + f"covariates, assumes {humanize.intcomma(len(covariates)+1)} coefficient "
-            + f"estimates (alpha={round(alpha, 4)}, beta={round(beta, 4)})."
-        )
+        if verbose:
+            print(
+                f"Power analysis where the response variable is a {variable_type} is as follows:"
+            )
+            print(
+                f"The minimum detectable effect (MDE) was estimated as {humanize.intcomma(mde)}. "
+                + f"\nEstimate was based on {humanize.intcomma(len(data))} observations "
+                + f"across {humanize.intcomma(len(working_df))} clusters of historical data. "
+                + f"\nThe model specification used {humanize.intcomma(len(covariates))} "
+                + f"covariates, assumes {humanize.intcomma(len(covariates)+1)} coefficient "
+                + f"estimates (alpha={round(alpha, 4)}, beta={round(beta, 4)})."
+            )
         return mde
 
     def _derive_n(
@@ -519,19 +521,20 @@ def solve_power(
             variable_type = "ratio metric"
         else:
             variable_type = "non-ratio metric"
-        print(
-            f"Power analysis where the response variable is a {variable_type} is as follows:"
-        )
-        print(
-            "The minimum required sample size was estimated as "
-            + f"{humanize.intcomma(sample_size)} using a minimum "
-            + f"detectable effect (MDE) of {humanize.intcomma(assumed_mde)}. "
-            + f"\nEstimate was based on {humanize.intcomma(len(data))} observations "
-            + f"across {humanize.intcomma(len(working_df))} clusters of historical data. "
-            + f"\nThe model specification used {humanize.intcomma(len(covariates))} "
-            + f"covariates, assumes {humanize.intcomma(len(covariates)+1)} coefficient "
-            + f"estimate(s) (alpha={round(alpha, 4)}, beta={round(beta, 4)})."
-        )
+        if verbose:
+            print(
+                f"Power analysis where the response variable is a {variable_type} is as follows:"
+            )
+            print(
+                "The minimum required sample size was estimated as "
+                + f"{humanize.intcomma(sample_size)} using a minimum "
+                + f"detectable effect (MDE) of {humanize.intcomma(assumed_mde)}. "
+                + f"\nEstimate was based on {humanize.intcomma(len(data))} observations "
+                + f"across {humanize.intcomma(len(working_df))} clusters of historical data. "
+                + f"\nThe model specification used {humanize.intcomma(len(covariates))} "
+                + f"covariates, assumes {humanize.intcomma(len(covariates)+1)} coefficient "
+                + f"estimate(s) (alpha={round(alpha, 4)}, beta={round(beta, 4)})."
+            )
         return sample_size
 
     def _derive_power(
@@ -582,19 +585,20 @@ def solve_power(
             variable_type = "ratio metric"
         else:
             variable_type = "non-ratio metric"
-        print(
-            f"Power analysis where the response variable is a {variable_type} is as follows:"
-        )
-        print(
-            "Statistical power was estimated as "
-            + f"{round(est_power, 4)} using a minimum "
-            + f"detectable effect (MDE) of {humanize.intcomma(assumed_mde)}. "
-            + f"\nEstimate was based on {humanize.intcomma(len(data))} observations "
-            + f"across {humanize.intcomma(len(working_df))} clusters of historical data. "
-            + f"\nThe model specification used {humanize.intcomma(len(covariates))} "
-            + f"covariates, assumes {humanize.intcomma(len(covariates)+1)} coefficient "
-            + f"estimates (alpha={round(alpha, 4)})."
-        )
+        if verbose:
+            print(
+                f"Power analysis where the response variable is a {variable_type} is as follows:"
+            )
+            print(
+                "Statistical power was estimated as "
+                + f"{round(est_power, 4)} using a minimum "
+                + f"detectable effect (MDE) of {humanize.intcomma(assumed_mde)}. "
+                + f"\nEstimate was based on {humanize.intcomma(len(data))} observations "
+                + f"across {humanize.intcomma(len(working_df))} clusters of historical data. "
+                + f"\nThe model specification used {humanize.intcomma(len(covariates))} "
+                + f"covariates, assumes {humanize.intcomma(len(covariates)+1)} coefficient "
+                + f"estimates (alpha={round(alpha, 4)})."
+            )
         return est_power
 
     _validate_number_of_inputs()
@@ -621,7 +625,7 @@ def solve_power(
             num_sides=alternative,
             covariates=exog,
         )
-        if ratio is None:
+        if ratio is None and verbose:
             print(
                 "The assignment ratio was not provided. Assuming a 0.5 ratio"
                 + "between treated versus control units of asignment."
@@ -657,7 +661,7 @@ def solve_power(
             num_sides=alternative,
             covariates=exog,
         )
-        if ratio is None:
+        if ratio is None and verbose:
             print(
                 "The assignment ratio was not provided. Assuming a 0.5 ratio"
                 + "between treated versus control units of asignment."
