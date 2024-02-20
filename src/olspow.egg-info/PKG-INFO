@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: olspow
-Version: 0.1.6
+Version: 1.0.0
 Summary: Python package for conducting power analysis given ratio metrics, clustered data, and covariate adjustment.
 Author-email: "Benjamin S. Knight" <knight.benjamin@gmail.com>
 Project-URL: Homepage, https://github.com/b-knight/olspow

@@ -373,9 +373,13 @@ def solve_power(
         if is_ratio:
             return working_df[numerator].mean() / working_df[denominator].mean()
         else:
-            return working_df[endog].mean() / working_df["NOBS_IN_CLUSTER"].mean()
+            return (
+                working_df[endog].mean() / working_df["NOBS_IN_CLUSTER"].mean(),
+                working_df[endog].mean(),
+                working_df["NOBS_IN_CLUSTER"].mean(),
+            )
 
-    def _compute_standard_deviation(is_ratio, working_df, endog, exog):
+    def _compute_sample_stdev(is_ratio, working_df, endog, exog):
         """
         Compute the standard deviation of the double residuals.
 
@@ -388,18 +392,21 @@ def solve_power(
         Returns:
         - float: The standard deviation of the double residuals.
         """
-        dof = len(working_df) - (len(exog) + 1)
-        j_resid = _compute_residuals_of_response_var(is_ratio, working_df, endog, exog)
-        n_resid = _compute_residuals_of_denominator(is_ratio, working_df, exog)
-        resid_data = pd.DataFrame([j_resid, n_resid]).T
-        resid_data.columns = ["j_resid", "n_resid"]
-        resid_data["ratio_of_means"] = _compute_ratio_of_means(
-            is_ratio, working_df, endog
+        n = len(working_df)
+        dof = n - (len(exog) + 1)
+        y_resid = _compute_residuals_of_response_var(is_ratio, working_df, endog, exog)
+        w_resid = _compute_residuals_of_denominator(is_ratio, working_df, exog)
+        theta, y_bar, w_bar = _compute_ratio_of_means(is_ratio, working_df, endog)
+        sample_std = np.sqrt(((y_resid - theta * w_resid) ** 2).sum() / dof)
+        return (
+            sample_std,
+            dof,
+            theta,
+            y_bar,
+            w_bar,
+            y_resid,
+            w_resid,
         )
-        resid_data["double_residual"] = resid_data["j_resid"] - (
-            resid_data["ratio_of_means"] * resid_data["n_resid"]
-        )
-        return np.sqrt(((resid_data["double_residual"] ** 2).sum()) / dof)
 
     def _fetch_z_statistic(input, alternative="one-sided"):
         """
@@ -452,7 +459,7 @@ def solve_power(
         beta_z, beta = _fetch_z_statistic(1.0 - power_value)
         mde = (
             (alpha_z + beta_z)
-            * np.sqrt((1 / assignment_ratio) + 1 / (1 - assignment_ratio))
+            * np.sqrt((1 / assignment_ratio) + (1 / (1 - assignment_ratio)))
             * (historical_stdev / (w_bar * np.sqrt(sample_size)))
         )
         if verbose:
@@ -473,7 +480,7 @@ def solve_power(
                 + f"covariates, assumes {humanize.intcomma(len(covariates)+1)} coefficient "
                 + f"estimates (alpha={round(alpha, 4)}, beta={round(beta, 4)})."
             )
-        return mde
+        return mde, alpha_z, beta_z
 
     def _derive_n(
         is_ratio_metric,
@@ -507,7 +514,7 @@ def solve_power(
         if verbose:
             print("Deriving the required sample size.")
         alpha_z, alpha = _fetch_z_statistic(alpha_value, num_sides)
-        beta_z, beta = _fetch_z_statistic(1.0 - power_value, num_sides)
+        beta_z, beta = _fetch_z_statistic(1.0 - power_value)
         sample_size = math.ceil(
             (
                 ((alpha_z + beta_z) ** 2)
@@ -535,7 +542,7 @@ def solve_power(
                 + f"covariates, assumes {humanize.intcomma(len(covariates)+1)} coefficient "
                 + f"estimate(s) (alpha={round(alpha, 4)}, beta={round(beta, 4)})."
             )
-        return sample_size
+        return sample_size, alpha_z, beta_z
 
     def _derive_power(
         is_ratio_metric,
@@ -599,7 +606,71 @@ def solve_power(
                 + f"covariates, assumes {humanize.intcomma(len(covariates)+1)} coefficient "
                 + f"estimates (alpha={round(alpha, 4)})."
             )
-        return est_power
+        return est_power, alpha_z
+
+    def _create_diagnostics_dict(
+        sample_stdev,
+        dof,
+        assignment_ratio,
+        theta,
+        y_bar,
+        w_bar,
+        y_residuals,
+        w_residuals,
+        hypothesis,
+        nobs_pre_aggregation,
+        nobs_post_aggregation,
+        alpha_z=None,
+        beta_z=None,
+        mde_est=None,
+        n_est=None,
+        power_est=None,
+    ):
+        """
+        Create a diagnostics dictionary with various statistics and values.
+
+        Args:
+            sample_stdev (float): The sample standard deviation.
+            dof (int): The degrees of freedom.
+            assignment_ratio (float): The assignment ratio.
+            theta (float): The value of theta.
+            y_bar (float): The numerator y-bar.
+            w_bar (float): The denominator w-bar.
+            y_residuals (list): The y-bar residuals.
+            w_residuals (list): The w-bar residuals.
+            hypothesis (str): The tails used in the t-test.
+            nobs_pre_aggregation (int): The number of observations before aggregation.
+            nobs_post_aggregation (int): The number of observations after aggregation.
+            alpha_z (float, optional): The alpha z-statistic. Defaults to None.
+            beta_z (float, optional): The beta z-statistic. Defaults to None.
+            mde_est (float, optional): The estimated minimum detectable effect. Defaults to None.
+            n_est (float, optional): The estimated required sample size. Defaults to None.
+            power_est (float, optional): The estimated power. Defaults to None.
+
+        Returns:
+            dict: The diagnostics dictionary containing various statistics and values.
+        """
+        if verbose:
+            print("Creating the diagnostics dictionary.")
+        diagnostics_dict = {
+            "Historical_Nobs_Pre_Aggregation": nobs_pre_aggregation,
+            "Historical_Nobs_Post_Aggregation": nobs_post_aggregation,
+            "Tails_Used_in_t_Test": hypothesis,
+            "Psi_Assignment_Tatio": assignment_ratio,
+            "Alpha_Z_Statistic": alpha_z,
+            "Beta_Z_Statistic": beta_z,
+            "Sample_Stdev": sample_stdev,
+            "Degrees_of_Freedom": dof,
+            "Theta": theta,
+            "Numerator_Y_Bar": y_bar,
+            "Denominator_W_Bar": w_bar,
+            "Y_Bar_Residuals": y_residuals,
+            "W_Bar_Residuals": w_residuals,
+            "Estimated_MDE": mde_est,
+            "Estimated_Required_Sample_Size": n_est,
+            "Estimated_Power": power_est,
+        }
+        return diagnostics_dict
 
     _validate_number_of_inputs()
     _validate_input_values()
@@ -609,12 +680,22 @@ def solve_power(
             + f"historic dataset of {humanize.intcomma(len(data))} "
             + "observations."
         )
+    nobs_pre_aggregation_val = len(data)
     working_df = _aggregate_data(data, endog, exog, cluster, numerator, denominator)
+    nobs_post_aggregation_val = len(working_df)
     _validate_sample_size(working_df, exog)
-    stdev = _compute_standard_deviation(is_ratio, working_df, endog, exog)
+    (
+        stdev,
+        degrees,
+        theta_val,
+        y_bar_val,
+        w_bar_val,
+        y_resid,
+        w_resid,
+    ) = _compute_sample_stdev(is_ratio, working_df, endog, exog)
     mean_nobs_per_cluster = working_df["NOBS_IN_CLUSTER"].mean()
     if mde is None and n is not None and power is not None:
-        mde = _derive_mde(
+        mde, alpha_z_stat, beta_z_stat = _derive_mde(
             is_ratio_metric=is_ratio,
             sample_size=n,
             historical_stdev=stdev,
@@ -630,9 +711,27 @@ def solve_power(
                 "The assignment ratio was not provided. Assuming a 0.5 ratio"
                 + "between treated versus control units of asignment."
             )
-        return mde
+        diagnostics_dict = _create_diagnostics_dict(
+            sample_stdev=stdev,
+            dof=degrees,
+            theta=theta_val,
+            assignment_ratio=ratio,
+            y_bar=y_bar_val,
+            w_bar=w_bar_val,
+            y_residuals=y_resid,
+            w_residuals=w_resid,
+            hypothesis=alternative,
+            nobs_pre_aggregation=nobs_pre_aggregation_val,
+            nobs_post_aggregation=nobs_post_aggregation_val,
+            alpha_z=alpha_z_stat,
+            beta_z=beta_z_stat,
+            mde_est=mde,
+            n_est=n,
+            power_est=power,
+        )
+        return mde, diagnostics_dict
     if n is None and mde is not None and power is not None:
-        n = _derive_n(
+        n, alpha_z_stat, beta_z_stat = _derive_n(
             is_ratio_metric=is_ratio,
             assumed_mde=mde,
             historical_stdev=stdev,
@@ -648,9 +747,27 @@ def solve_power(
                 "The assignment ratio was not provided. Assuming a 0.5 ratio"
                 + "between treated versus control units of asignment."
             )
-        return n
+        diagnostics_dict = _create_diagnostics_dict(
+            sample_stdev=stdev,
+            dof=degrees,
+            theta=theta_val,
+            assignment_ratio=ratio,
+            y_bar=y_bar_val,
+            w_bar=w_bar_val,
+            y_residuals=y_resid,
+            w_residuals=w_resid,
+            hypothesis=alternative,
+            nobs_pre_aggregation=nobs_pre_aggregation_val,
+            nobs_post_aggregation=nobs_post_aggregation_val,
+            alpha_z=alpha_z_stat,
+            beta_z=beta_z_stat,
+            mde_est=mde,
+            n_est=n,
+            power_est=power,
+        )
+        return n, diagnostics_dict
     if power is None and mde is not None and n is not None:
-        power = _derive_power(
+        power, alpha_z_stat = _derive_power(
             is_ratio_metric=is_ratio,
             sample_size=n,
             assumed_mde=mde,
@@ -666,4 +783,21 @@ def solve_power(
                 "The assignment ratio was not provided. Assuming a 0.5 ratio"
                 + "between treated versus control units of asignment."
             )
-        return power
+        diagnostics_dict = _create_diagnostics_dict(
+            sample_stdev=stdev,
+            dof=degrees,
+            theta=theta_val,
+            assignment_ratio=ratio,
+            y_bar=y_bar_val,
+            w_bar=w_bar_val,
+            y_residuals=y_resid,
+            w_residuals=w_resid,
+            hypothesis=alternative,
+            nobs_pre_aggregation=nobs_pre_aggregation_val,
+            nobs_post_aggregation=nobs_post_aggregation_val,
+            alpha_z=alpha_z_stat,
+            mde_est=mde,
+            n_est=n,
+            power_est=power,
+        )
+        return power, diagnostics_dict
