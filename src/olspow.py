@@ -260,7 +260,9 @@ def solve_power(
         data_agg_out = data.groupby(cluster).agg(agg_method)
         data_agg_out.rename(columns={cluster: "NOBS_IN_CLUSTER"}, inplace=True)
         if verbose:
-            print(f"{len(data_agg_out)} clusters were found in the data.")
+            print(
+                f"{humanize.intcomma(len(data_agg_out))} clusters were found in the data."
+            )
         return data_agg_out
 
     def _validate_sample_size(data, exog):
