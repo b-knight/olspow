@@ -399,6 +399,7 @@ def solve_power(
         y_resid = _compute_residuals_of_response_var(is_ratio, working_df, endog, exog)
         w_resid = _compute_residuals_of_denominator(is_ratio, working_df, exog)
         theta, y_bar, w_bar = _compute_ratio_of_means(is_ratio, working_df, endog)
+        double_residuals = y_resid - theta * w_resid
         sample_std = np.sqrt(((y_resid - theta * w_resid) ** 2).sum() / dof)
         return (
             sample_std,
@@ -408,6 +409,7 @@ def solve_power(
             w_bar,
             y_resid,
             w_resid,
+            double_residuals,
         )
 
     def _fetch_z_statistic(input, alternative="one-sided"):
@@ -619,6 +621,7 @@ def solve_power(
         w_bar,
         y_residuals,
         w_residuals,
+        double_residuals,
         hypothesis,
         nobs_pre_aggregation,
         nobs_post_aggregation,
@@ -668,6 +671,7 @@ def solve_power(
             "Denominator_W_Bar": w_bar,
             "Y_Bar_Residuals": y_residuals,
             "W_Bar_Residuals": w_residuals,
+            "Double_Residuals": double_residuals,
             "Estimated_MDE": mde_est,
             "Estimated_Required_Sample_Size": n_est,
             "Estimated_Power": power_est,
@@ -694,6 +698,7 @@ def solve_power(
         w_bar_val,
         y_resid,
         w_resid,
+        double_residuals,
     ) = _compute_sample_stdev(is_ratio, working_df, endog, exog)
     mean_nobs_per_cluster = working_df["NOBS_IN_CLUSTER"].mean()
     if mde is None and n is not None and power is not None:
@@ -722,6 +727,7 @@ def solve_power(
             w_bar=w_bar_val,
             y_residuals=y_resid,
             w_residuals=w_resid,
+            double_residuals=double_residuals,
             hypothesis=alternative,
             nobs_pre_aggregation=nobs_pre_aggregation_val,
             nobs_post_aggregation=nobs_post_aggregation_val,
@@ -758,6 +764,7 @@ def solve_power(
             w_bar=w_bar_val,
             y_residuals=y_resid,
             w_residuals=w_resid,
+            double_residuals=double_residuals,
             hypothesis=alternative,
             nobs_pre_aggregation=nobs_pre_aggregation_val,
             nobs_post_aggregation=nobs_post_aggregation_val,
@@ -794,6 +801,7 @@ def solve_power(
             w_bar=w_bar_val,
             y_residuals=y_resid,
             w_residuals=w_resid,
+            double_residuals=double_residuals,
             hypothesis=alternative,
             nobs_pre_aggregation=nobs_pre_aggregation_val,
             nobs_post_aggregation=nobs_post_aggregation_val,
