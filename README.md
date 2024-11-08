@@ -1,6 +1,6 @@
 # olspow: Power Analysis for Experiments Using Regression / Clustered Data
 ## What is it?
-**olspow** is a python package designed to elucidate the level of statistical power, the sample size, and the minimum detectable effect (MDE) within
+**olspow** is a python package designed to estimate the level of statistical power, the sample size, and the minimum detectable effect (MDE) within
 the context of randomized, controlled trials (i.e. A/B tests) where the experimenter is using OLS to estimate the effect size of a dichotomous
 treatment variable. The underlying methodology can be equally applied to clustered data, or simpler experimental designs where the relationship
 between observations and units of experimental assignment are 1:1.
@@ -35,7 +35,7 @@ superfluous. Contrariwise, a value of 'False' will obviate the need for the 'num
 > **_numerator (str, optional)_**: The name of the numerator variable (e.g. if the metric is items fulfilled per unit of time, then this value would be the number of items fulfilled). Required when 'is_ratio' = True. Defaults to None.<br>
 > **_denominator (str, optional)_**: The name of the denominator variable (e.g. if the metric is items fulfilled per unit of time, then this value would be the amount of time). Required when 'is_ratio' = True. Defaults to None.<br>
 > **_cluster (string, required)_** : The name of the column in the Pandas dataframe that serves as the cluster key (unit of experimental assignment)<br>
-> **_ratio (float, optional)_** : Assumed ratio of treated units of assignment to control units of assignment. Defaults to 0.5 (i.e. 50:50 assignment between treated and control)<br>
+> **_ratio (float, optional)_** : Assumed proportion of observatioins that receive treatment. Defaults to 0.5 (i.e. 50:50 assignment between treated and control)<br>
 > **_alpha (float, optional)_** : A float corresponding to the false positive rate. The default value is 0.05<br>
 > **_power (float, optional)_** : A float corresponding to the level of statistical power.<br>
 > **_n (integer, optional)_** : An integer corresponding to the number of units of experimental assignment.<br>
